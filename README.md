@@ -1,0 +1,1 @@
+In order to use this software also checkout PHP-Serial and phpMQTT from github.com/jeroenst
