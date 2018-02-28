@@ -2,8 +2,8 @@
 // This php program reads data from a ducobox silent (and maybe others)
 // 
 
-include("../PHP-Serial/src/PhpSerial.php");
-require("../phpMQTT/phpMQTT.php");
+include(realpath(dirname(__FILE__))."/../PHP-Serial/src/PhpSerial.php");
+require(realpath(dirname(__FILE__))."/../phpMQTT/phpMQTT.php");
 
 
 $serialdevice = "/dev/ttyUSB1";
