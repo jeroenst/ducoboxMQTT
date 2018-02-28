@@ -31,7 +31,8 @@ if (($tmp = $iniarray["ducobox"]["mqttpassword"]) != "") $password = $tmp;
 
 $ducodata["ducobox"]  = array();
 
-exec ('stty -F '.$serialdevice.'  1:0:18b2:0:3:1c:7f:15:4:5:1:0:11:13:1a:0:12:f:17:16:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0');
+exec ('stty -F '.$serialdevice.' 1:0:18b2:0:3:1c:7f:15:4:5:1:0:11:13:1a:0:12:f:17:16:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0:0', $execresult);
+
 
 $serial = new PhpSerial;
 
@@ -133,10 +134,9 @@ while(1)
                  if (!isset($ducodata["ducobox"][$requestednodeid][$requesteditem]))
                  {
                   $ducodata["ducobox"][$requestednodeid][$requesteditem] = null;
-                  $ducodatatimeout["ducobox"][$requestednodeid][$requesteditem] = 0;
                  }
 
-                 if (strpos($firstmessage, "  Failed") === 0)
+                 if ((strpos($firstmessage, "  Failed") !== FALSE) && (strpos($message, "  Failed") == 0))
                  {
                   // After 10 retries make data invalid
                   if (isset($ducodatatimeout["ducobox"][$requestednodeid][$requesteditem]))
@@ -145,18 +145,19 @@ while(1)
                     {
                       $ducodata["ducobox"][$requestednodeid][$requesteditem] = null;
                       $mqtt->publish($mqttTopicPrefix.$requestednodeid."/".$requesteditem,  "");
-
-                     }
+                    }
                     else $ducodatatimeout["ducobox"][$requestednodeid][$requesteditem]++;
                   }
-                  else $ducodatatimeout["ducobox"][$requestednodeid][$requesteditem] = 1;
+                  else 
+                  {
+                   $ducodatatimeout["ducobox"][$requestednodeid][$requesteditem] = 1;
+                  }
                   echo "Errorcount=".$ducodatatimeout["ducobox"][$requestednodeid][$requesteditem]."\n";
-                  
                  }
                  
                }  
 
-                 if (strpos($message, ">") === 0)
+                 if ((strpos($message, ">") !== FALSE) && (strpos($message, ">") == 0))
                  {
                    $message = substr($message, 2);
 
