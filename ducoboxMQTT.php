@@ -15,7 +15,7 @@ $client_id = uniqid("ducobox_");; // make sure this is unique for connecting to 
 
 
 
-echo ("Casaan Opentherm Gateway Software...\n"); 
+echo ("DucoBox MQTT publisher started...\n"); 
 $mqttTopicPrefix = "home/ducobox/";
 
 
