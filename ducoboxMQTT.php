@@ -121,14 +121,14 @@ while(1)
                  {
                   $ducodata["ducobox"][$requestednodeid][$requesteditem] =  substr($firstmessage, 5);
                   $ducodatatimeout["ducobox"][$requestednodeid][$requesteditem] = 0;
-                  $mqtt->publish($mqttTopicPrefix.$requestednodeid."/".$requesteditem,  substr($firstmessage, 5), 0);
+                  publishmqtt($requestednodeid."/".$requesteditem, substr($firstmessage, 5), 0);
                  }
                  
                  if  (strpos($firstmessage, "  FanSpeed:") === 0)
                  {
                   $ducodata["ducobox"][$requestednodeid][$requesteditem] = explode(" ",$firstmessage)[8];
                   $ducodatatimeout["ducobox"][$requestednodeid][$requesteditem] = 0;
-                  $mqtt->publish($mqttTopicPrefix.$requestednodeid."/".$requesteditem,  explode(" ",$firstmessage)[8]);
+                  publishmqtt($requestednodeid."/".$requesteditem, explode(" ",$firstmessage)[8]);
                  }
 
                  if (!isset($ducodata["ducobox"][$requestednodeid][$requesteditem]))
@@ -144,7 +144,7 @@ while(1)
                     if ($ducodatatimeout["ducobox"][$requestednodeid][$requesteditem] > 10)
                     {
                       $ducodata["ducobox"][$requestednodeid][$requesteditem] = null;
-                      $mqtt->publish($mqttTopicPrefix.$requestednodeid."/".$requesteditem,  "");
+                      publishmqtt($requestednodeid."/".$requesteditem,  "");
                     }
                     else $ducodatatimeout["ducobox"][$requestednodeid][$requesteditem]++;
                   }
@@ -196,17 +196,13 @@ while(1)
 $serial->deviceClose();
 exit(1);
 
-
-function sendToAllTcpSocketClients($sockets, $msg)
+function publishmqtt ($topic, $msg)
 {
-   echo ("Sending to all clients: ");
-   echo ($msg."\n");
-   foreach ($sockets as $conn) 
-   {
-     fwrite($conn, $msg);
-   }
+        global $mqtt;
+        global $mqttTopicPrefix;
+        echo ($topic.": ".$msg."\n");
+        $mqtt->publishwhenchanged($mqttTopicPrefix.$topic,$msg,0,1);
 }
-
 
 function writeserial ($serial, $message)
 {
