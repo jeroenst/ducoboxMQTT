@@ -1,3 +1,4 @@
+#!/usr/bin/php
 <?php  
 // This php program reads data from a ducobox silent (and maybe others)
 // 
@@ -85,9 +86,10 @@ while(1)
         $errormask = NULL;
         $nroffd = stream_select($readmask, $writemask, $errormask, 1);
 
+        $mqtt->proc();
+
         if ($nroffd == 0)
         {
-          $mqtt->connect(true, NULL, $username, $password);
           if ($sendtimer == 0)
           {
             $sendtimer = 0;
@@ -119,9 +121,9 @@ while(1)
                  echo ("Message='".$firstmessage."'\n");
                  if  (strpos($firstmessage, "  -->") === 0)
                  {
-                  $ducodata["ducobox"][$requestednodeid][$requesteditem] =  substr($firstmessage, 5);
+                  $ducodata["ducobox"][$requestednodeid][$requesteditem] =  substr($firstmessage, 6);
                   $ducodatatimeout["ducobox"][$requestednodeid][$requesteditem] = 0;
-                  publishmqtt($requestednodeid."/".$requesteditem, substr($firstmessage, 5), 0);
+                  publishmqtt($requestednodeid."/".$requesteditem, substr($firstmessage, 6));
                  }
                  
                  if  (strpos($firstmessage, "  FanSpeed:") === 0)
@@ -141,7 +143,7 @@ while(1)
                   // After 10 retries make data invalid
                   if (isset($ducodatatimeout["ducobox"][$requestednodeid][$requesteditem]))
                   {
-                    if ($ducodatatimeout["ducobox"][$requestednodeid][$requesteditem] > 10)
+                    if ($ducodatatimeout["ducobox"][$requestednodeid][$requesteditem] > 2)
                     {
                       $ducodata["ducobox"][$requestednodeid][$requesteditem] = null;
                       publishmqtt($requestednodeid."/".$requesteditem,  "");
@@ -181,7 +183,7 @@ while(1)
                    break;
                    case 3:
                     echo "Waiting for next query...\n";
-                    $sendtimer = -5; // Wait 5 seconds before next query
+                    $sendtimer = -1; // Wait 1 seconds before next query
                    break;
                   }
                   $requestitemid++;
