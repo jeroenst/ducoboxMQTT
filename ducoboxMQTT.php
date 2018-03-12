@@ -13,8 +13,8 @@ $port = 1883;                     // change if necessary
 $username = "";                   // set your username
 $password = "";                   // set your password
 $client_id = uniqid("ducobox_");; // make sure this is unique for connecting to sever - you could use uniqid()
-
-
+$minfanspeed = 400;
+$oldminfanspeed = $minfanspeed;
 
 echo ("DucoBox MQTT publisher started...\n"); 
 $mqttTopicPrefix = "home/ducobox/";
@@ -40,6 +40,10 @@ $serial = new PhpSerial;
 
 $mqtt = new phpMQTT($server, $port, $client_id);
 $mqtt->connect(true, NULL, $username, $password);
+$topics['home/ducobox/setminfanspeed'] = array("qos" => 0, "function" => "setminfanspeed");
+$mqtt->subscribe($topics, 0);
+
+
 
 // First we must specify the device. This works on both linux and windows (if
 // your linux serial device is /dev/ttyS0 for COM1, etc)
@@ -90,13 +94,26 @@ while(1)
 
         if ($nroffd == 0)
         {
-          if ($sendtimer == 0)
+          if ((($sendtimer < 0) && ($minfanspeed != $oldminfanspeed)) || ($sendtimer == 0))
           {
+            if ($minfanspeed != $oldminfanspeed)
+            {
+                      echo ("Setting min fan speed...\n");
+                      writeserial ($serial, "fanparaset 2 ".$minfanspeed."\r\n");
+                      $oldminfanspeed = $minfanspeed;
+                      $requesteditem = "setminfanspeed";
+                      $requestednodeid = 1;
+                      $requestitemid = 0;
+            }
+            else
+            {
+                      $sendtimer = 0;
+                      $requestitemid = 1;
+                      writeserial ($serial, "fanspeed\r\n");
+                      $requesteditem = "fanspeed";
+                      $requestednodeid = 1;
+            }
             $sendtimer = 0;
-            $requestitemid = 0;
-            writeserial ($serial, "fanspeed\r\n");
-            $requesteditem = "fanspeed";
-            $requestednodeid = 1;
           }
           $sendtimer++;
           // If 30 seconds are past retry...
@@ -161,24 +178,26 @@ while(1)
 
                  if ((strpos($message, ">") !== FALSE) && (strpos($message, ">") == 0))
                  {
+                   echo ("Message='".$message."'\n");
                    $message = substr($message, 2);
+
 
                   echo "Ducobox ready for next command.\n";
                   switch ($requestitemid) 
                   {
                    case 0:
+                      writeserial ($serial, "fanspeed\r\n");
+                      $requesteditem = "fanspeed";
+                      $requestednodeid = 1;
+                   break;
+                   case 1:
                     writeserial ($serial, "nodeparaget 2 73\r\n");
                     $requesteditem = "temperature" ;
                     $requestednodeid = 2;
                    break;
-                   case 1:
+                   case 2:
                     writeserial ($serial, "nodeparaget 2 74\r\n");
                     $requesteditem = "co2";
-                    $requestednodeid = 2;
-                   break;
-                   case 2:
-                    writeserial ($serial, "nodeparaget 2 75\r\n");
-                    $requesteditem = "rh" ;
                     $requestednodeid = 2;
                    break;
                    case 3:
@@ -214,9 +233,18 @@ function writeserial ($serial, $message)
    $serial->sendMessage($message[$pos], 0);
    echo $message[$pos];
    $pos++;
-   usleep(10000);
+   usleep(20000);
  }
  
+}
+
+
+function setminfanspeed($topic, $msg)
+{
+        global $mqtt;
+        global $minfanspeed;
+        echo "$topic = $msg\n";
+        $minfanspeed = $msg;
 }
 
 
